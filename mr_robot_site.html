@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>hello friend</title>
+
+  <style>
+    @font-face {
+      font-family: 'MrRobot';
+      src: url('MrRobot.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background-color: #1a1f2b;
+      background-image: radial-gradient(circle at 50% 0%, #2a3346 0%, #1a1f2b 60%);
+      color: #c8d0dc;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      overflow: hidden;
+    }
+
+    .hello {
+      font-family: 'MrRobot', sans-serif;
+      font-weight: 400;
+      font-style: normal;
+      text-transform: uppercase;
+      font-size: clamp(3rem, 10vw, 7rem);
+      color: #e50914;
+      text-align: center;
+      line-height: 1.2;
+      letter-spacing: 4px;
+      margin-bottom: 40px;
+    }
+
+    .stage {
+      width: 100%;
+      max-width: 900px;
+      aspect-ratio: 16 / 9;
+      background: #0f131c;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.8),
+                  0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .stage video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+
+    .subtitles-wrap {
+      width: 100%;
+      max-width: 900px;
+      min-height: 70px;
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px 20px;
+      background: #0f131c;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7),
+                  0 0 0 1px rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+    }
+
+    .subtitle-text {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      text-align: center;
+      line-height: 1.5;
+      letter-spacing: 0.3px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      will-change: opacity, transform;
+    }
+
+    .subtitle-text.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .subtitle-text.leaving {
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .subtitle-text .main        { color: #e50914; }
+    .subtitle-text .translation { color: #8b95a7; }
+
+    /* Терминал */
+    .terminal {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      color: #ffffff;
+      font-family: 'Courier New', Consolas, monospace;
+      font-size: clamp(0.75rem, 1.4vw, 1rem);
+      line-height: 1.5;
+      padding: 32px 40px;
+      overflow: hidden;
+      z-index: 9998;
+      display: none;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .terminal.show { display: block; }
+
+    .terminal .line {
+      margin-bottom: 2px;
+      color: #ffffff;
+    }
+
+    .terminal .line.error { color: #ff3b3b; }
+    .terminal .line.panic { color: #ff3b3b; font-weight: 700; }
+
+    .terminal .cursor {
+      display: inline-block;
+      width: 9px;
+      height: 1em;
+      background: #ffffff;
+      vertical-align: text-bottom;
+      animation: blink 1s steps(2, start) infinite;
+    }
+
+    @keyframes blink {
+      to { visibility: hidden; }
+    }
+
+    /* Kernel panic */
+    .kernel-panic {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      color: #ff3b3b;
+      font-family: 'Courier New', Consolas, monospace;
+      font-size: clamp(0.8rem, 1.5vw, 1.05rem);
+      line-height: 1.5;
+      padding: 40px;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      z-index: 9999;
+      white-space: pre-wrap;
+    }
+
+    .kernel-panic.show { display: flex; }
+
+    .kernel-panic .title {
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: 1px;
+    }
+
+    .kernel-panic .trace {
+      color: #ff8080;
+      margin-bottom: 8px;
+    }
+
+    .kernel-panic .hint {
+      color: #8b95a7;
+      margin-top: 24px;
+      font-style: italic;
+    }
+
+    /* Обычная 404 в стиле браузера */
+    .page-404 {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      color: #202124;
+      font-family: Arial, 'Helvetica Neue', sans-serif;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+      z-index: 10000;
+    }
+
+    .page-404.show { display: flex; }
+
+    .page-404 .code-404 {
+      font-size: clamp(4rem, 12vw, 8rem);
+      font-weight: 700;
+      color: #202124;
+      letter-spacing: 2px;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .page-404 h1 {
+      font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+      font-weight: 500;
+      color: #202124;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    /* Код ошибки — как в браузере */
+    .page-404 .err-code {
+      font-family: Arial, 'Helvetica Neue', sans-serif;
+      font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+      font-weight: 600;
+      color: #5f6368;
+      letter-spacing: 1px;
+      margin: 20px 0 28px;
+      text-transform: uppercase;
+    }
+
+    .page-404 .back {
+      margin-top: 12px;
+      color: #1a73e8;
+      text-decoration: none;
+      font-size: 0.95rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+
+    .page-404 .back:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <h1 class="hello">hello friend</h1>
+
+  <div class="stage">
+    <video id="video" autoplay muted playsinline preload="auto">
+      <source src="season_1.mp4" type="video/mp4">
+      Ваш браузер не поддерживает видео.
+    </video>
+  </div>
+
+  <div class="subtitles-wrap">
+    <div class="subtitle-text" id="subtitleText"></div>
+  </div>
+
+  <div class="terminal" id="terminal"></div>
+
+  <div class="kernel-panic" id="kernelPanic">
+    <div class="title">Kernel panic - not syncing: Fatal exception in interrupt</div>
+    <div class="trace">CPU: 0 PID: 1 Comm: init Not tainted 6.1.0-mrrobot #1</div>
+    <div class="trace">Hardware name: fsociety machine</div>
+    <div class="trace">Call Trace:</div>
+    <div class="trace">  &lt;TASK&gt; dump_stack_lvl+0x57/0x7a</div>
+    <div class="trace">  &lt;TASK&gt; panic+0x105/0x2e0</div>
+    <div class="trace">  &lt;TASK&gt; do_exit+0x0/0xab0</div>
+    <div class="trace">  &lt;TASK&gt; do_group_exit+0x33/0xa0</div>
+    <div class="trace">Kernel Offset: 0x0 from 0xffffffff81000000</div>
+    <div class="trace">---[ end Kernel panic - not syncing: Fatal exception in interrupt ]---</div>
+    <div class="hint">System halted. Press any key to continue...</div>
+  </div>
+
+  <!-- 404 Not Found -->
+  <div class="page-404" id="page404">
+    <div class="code-404">404</div>
+    <h1>Not Found</h1>
+    <div class="err-code">ERR_FUCK_SOCIETY</div>
+  </div>
+
+  <script>
+    const video     = document.getElementById('video');
+    const subEl     = document.getElementById('subtitleText');
+    const terminal  = document.getElementById('terminal');
+    const kernel    = document.getElementById('kernelPanic');
+    const page404   = document.getElementById('page404');
+
+    const subtitles = [
+      { start: 1.3,  end: 2.9,  text: "What is it about society that",          translation: "Что именно в обществе" },
+      { start: 2.9,  end: 4.6,  text: "disappoints you so much?",              translation: "разочаровывает тебя так сильно?" },
+      { start: 5.6,  end: 6.8,  text: "Fuck society.",                         translation: "К чёрту общество." },
+      { start: 8.1,  end: 9.0,  text: "Hello, friend.",                        translation: "Привет, друг." },
+      { start: 10.1, end: 11.1, text: "That's Lying",                          translation: "Это ложь" },
+      { start: 11.1, end: 12.7, text: "Maybe I should give you a name.",       translation: "Может, мне дать тебе имя." },
+      { start: 13.4, end: 15.5, text: "But that's a slippery slope.",          translation: "Но это скользкая дорожка." },
+      { start: 15.5, end: 16.8, text: "You're only in my head.",               translation: "Ты лишь в моей голове." },
+      { start: 17.6, end: 18.6, text: "It's actually happened.",               translation: "Это действительно случилось." },
+      { start: 18.6, end: 20.9, text: "I'm talking to an imaginary person.",   translation: "Я говорю с воображаемым человеком." },
+      { start: 20.9, end: 23.1, text: "Please, you have to do something.",     translation: "Пожалуйста, ты должен что-то сделать." },
+      { start: 23.1, end: 24.1, text: "You have to help me.",                  translation: "Ты должен мне помочь." },
+      { start: 24.1, end: 25.6, text: "Say something that you can tell me.",   translation: "Скажи что-нибудь, что можешь мне сказать." },
+      { start: 25.6, end: 27.0, text: "Stop talking to them.",                 translation: "Прекрати с ними разговаривать." },
+      { start: 27.0, end: 28.0, text: "Really?",                               translation: "Правда?" },
+      { start: 28.0, end: 29.6, text: "You want to talk about reality?",       translation: "Ты хочешь поговорить о реальности?" },
+      { start: 29.6, end: 30.2, text: "Look at it!",                           translation: "Посмотри на неё!" },
+      { start: 31.0, end: 33.7, text: "A world built on fantasy.",             translation: "Мир, построенный на фантазии." },
+      { start: 33.7, end: 35.1, text: "Is any of it real?",                    translation: "Что-то из этого реально?" },
+      { start: 35.1, end: 36.4, text: "We haven't lived in anything",          translation: "Мы не жили ни в чём" },
+      { start: 36.4, end: 37.9, text: "remotely close to it since",            translation: "даже отдалённо похожем с тех пор," },
+      { start: 37.9, end: 39.2, text: "the turn of the century.",              translation: "как наступил новый век." },
+      { start: 39.2, end: 42.6, text: "We live in a kingdom of bullshit.",     translation: "Мы живём в королевстве дерьма." },
+      { start: 42.6, end: 44.3, text: "Tell me one thing, Elliot.",            translation: "Скажи мне одну вещь, Эллиот." },
+      { start: 44.3, end: 46.0, text: "Are you a one or zero?",                translation: "Ты единица или ноль?" },
+      { start: 46.6, end: 47.5, text: "This is the question you",              translation: "Вот вопрос, который" },
+      { start: 47.5, end: 48.3, text: "have to ask yourself.",                 translation: "ты должен задать себе." },
+      { start: 48.3, end: 50.3, text: "Are you a yes or a no?",                translation: "Ты «да» или «нет»?" },
+      { start: 50.3, end: 52.2, text: "Are you going to act or not?",          translation: "Ты собираешься действовать или нет?" },
+      { start: 52.2, end: 53.1, text: "When you come right down",              translation: "Когда дойдёшь до самой" },
+      { start: 53.1, end: 54.5, text: "to it, at its core.",                   translation: "сути, до самого ядра." },
+      { start: 54.5, end: 55.6, text: "Beneath every choice",                  translation: "В основе каждого выбора" },
+      { start: 55.6, end: 58.3, text: "is either a one or a zero.",            translation: "лежит либо единица, либо ноль." },
+      { start: 58.3, end: 60.1, text: "You want to change the world.",         translation: "Ты хочешь изменить мир." },
+      { start: 60.1, end: 61.2, text: "You become a yes.",                     translation: "Ты становишься «да»." },
+    ];
+
+    let currentIndex = -1;
+    let hideTimer = null;
+
+    function renderSubtitle(item) {
+      subEl.innerHTML = '';
+      const main = document.createElement('span');
+      main.className = 'main';
+      main.textContent = item.text;
+      subEl.appendChild(main);
+
+      if (item.translation) {
+        subEl.appendChild(document.createTextNode(' '));
+        const tr = document.createElement('span');
+        tr.className = 'translation';
+        tr.textContent = '(' + item.translation + ')';
+        subEl.appendChild(tr);
+      }
+    }
+
+    function showSubtitle(item) {
+      clearTimeout(hideTimer);
+      renderSubtitle(item);
+      subEl.classList.remove('leaving');
+      requestAnimationFrame(() => subEl.classList.add('show'));
+    }
+
+    function hideSubtitle() {
+      subEl.classList.remove('show');
+      subEl.classList.add('leaving');
+      hideTimer = setTimeout(() => {
+        subEl.innerHTML = '';
+        subEl.classList.remove('leaving');
+      }, 450);
+    }
+
+    function updateSubtitles() {
+      const t = video.currentTime;
+      const found = subtitles.findIndex(s => t >= s.start && t < s.end);
+      if (found !== currentIndex) {
+        currentIndex = found;
+        found === -1 ? hideSubtitle() : showSubtitle(subtitles[found]);
+      }
+    }
+
+    video.addEventListener('timeupdate', updateSubtitles);
+
+    document.addEventListener('click', () => {
+      video.muted = false;
+      video.volume = 1;
+    }, { once: true });
+
+    const terminalLines = [
+      { t: "[    0.000000] Booting fsociety kernel...",                 c: "",      d: 10 },
+      { t: "[    0.184201] CPU0: Intel(R) Core(TM) i7 @ 3.60GHz",       c: "",      d: 8  },
+      { t: "[    0.312774] Memory: 16384MB/16384MB available",          c: "",      d: 8  },
+      { t: "[    0.504118] Mounting root filesystem...",                c: "",      d: 10 },
+      { t: "[    0.712390] systemd[1]: Started Journal Service.",       c: "",      d: 10 },
+      { t: "[    0.981002] Starting Network Manager...",                c: "",      d: 10 },
+      { t: "[    1.245887] eth0: link up, 1000Mbps, full-duplex",       c: "",      d: 10 },
+      { t: "[    1.509223] Loading module: mrrobot_core.ko",            c: "",      d: 12 },
+      { t: "[    1.771044] WARNING: unknown symbol in module",          c: "",      d: 12 },
+      { t: "[    1.998211] mrrobot_core: disagrees about version",      c: "",      d: 12 },
+      { t: "[    2.214556] ERROR: cannot insert 'mrrobot_core.ko'",     c: "error", d: 16 },
+      { t: "[    2.401887] Kernel tainted: G  W  O  6.1.0-mrrobot #1",  c: "",      d: 12 },
+      { t: "[    2.639001] Call Trace:",                                c: "",      d: 8  },
+      { t: "[    2.640112]  load_module+0x1f2a/0x2200",                 c: "",      d: 6  },
+      { t: "[    2.641330]  __do_sys_finit_module+0xbb/0x120",          c: "",      d: 6  },
+      { t: "[    2.642981]  do_syscall_64+0x5c/0x90",                   c: "",      d: 6  },
+      { t: "[    2.644210]  entry_SYSCALL_64_after_hwframe+0x64/0x8c",  c: "",      d: 10 },
+      { t: "[    2.887110] BUG: unable to handle kernel NULL pointer",  c: "error", d: 16 },
+      { t: "[    3.112900] Oops: 0002 [#1] SMP NOPTI",                  c: "error", d: 14 },
+      { t: "[    3.339221] RIP: 0010:mrrobot_init+0x42/0x100 [mrrobot]",c: "error", d: 14 },
+      { t: "[    3.560118] CR2: 0000000000000000",                      c: "",      d: 10 },
+      { t: "[    3.784001] ---[ end trace 0000000000000000 ]---",       c: "",      d: 12 },
+      { t: "Kernel panic - not syncing: Fatal exception in interrupt",  c: "panic", d: 30 },
+    ];
+
+    function typeTerminal() {
+      terminal.innerHTML = '';
+      let i = 0;
+
+      function nextLine() {
+        if (i >= terminalLines.length) {
+          const cursorLine = document.createElement('div');
+          cursorLine.className = 'line';
+          cursorLine.innerHTML = '<span class="cursor"></span>';
+          terminal.appendChild(cursorLine);
+
+          setTimeout(showKernelPanic, 300);
+          return;
+        }
+
+        const item = terminalLines[i++];
+        const line = document.createElement('div');
+        line.className = 'line ' + (item.c || '');
+        line.textContent = item.t;
+        terminal.appendChild(line);
+        setTimeout(nextLine, item.d || 8);
+      }
+
+      nextLine();
+    }
+
+    function showKernelPanic() {
+      terminal.classList.remove('show');
+      kernel.classList.add('show');
+
+      setTimeout(() => {
+        kernel.classList.remove('show');
+        page404.classList.add('show');
+      }, 1200);
+    }
+
+    video.addEventListener('ended', () => {
+      hideSubtitle();
+      terminal.classList.add('show');
+      typeTerminal();
+    });
+  </script>
+
+</body>
+</html>
